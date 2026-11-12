@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusPulse - Foco & Sons Relaxantes</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-gentle {
+      0%, 100% { transform: scale(1); opacity: 0.95; }
+      50% { transform: scale(1.02); opacity: 1; }
+    }
+    .pulsing {
+      animation: pulse-gentle 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 antialiased p-4 min-h-screen flex items-center justify-center font-sans">
+  <div class="w-full max-w-md p-6 space-y-5 bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl">
+    
+    <!-- Cabeçalho -->
+    <header class="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/20">
+          ⚡
+        </div>
+        <div>
+          <h1 class="text-base font-bold tracking-tight text-white">FocusPulse</h1>
+          <p class="text-xs text-slate-400">Pomodoro & Sons Ambientes</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs font-medium px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="session-count">0 sessões</span>
+      </div>
+    </header>
+
+    <!-- Modos de Tempo -->
+    <div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl bg-slate-950/60 border border-slate-800 text-xs font-semibold">
+      <button id="btn-mode-focus" onclick="setMode('focus')" class="py-2 rounded-xl bg-indigo-600 text-white transition-all shadow-md shadow-indigo-600/30">
+        Foco (25m)
+      </button>
+      <button id="btn-mode-short" onclick="setMode('short')" class="py-2 rounded-xl text-slate-400 hover:text-slate-200 transition-all">
+        Pausa (5m)
+      </button>
+      <button id="btn-mode-long" onclick="setMode('long')" class="py-2 rounded-xl text-slate-400 hover:text-slate-200 transition-all">
+        Longa (15m)
+      </button>
+    </div>
+
+    <!-- Timer Visual Display -->
+    <div class="relative flex flex-col items-center justify-center p-8 rounded-3xl bg-slate-950/40 border border-slate-800/80 overflow-hidden shadow-inner">
+      <div id="glow-bg" class="absolute -inset-1 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 blur-2xl opacity-50 transition-all duration-700"></div>
+      
+      <div class="relative z-10 flex flex-col items-center">
+        <span id="timer-display" class="font-mono text-6xl font-black tracking-tight tabular-nums select-none text-white drop-shadow-sm">
+          25:00
+        </span>
+        <span id="timer-status" class="text-xs font-medium text-slate-400 mt-2 uppercase tracking-widest">
+          Pronto para começar
+        </span>
+      </div>
+
+      <!-- Barra de Progresso -->
+      <div class="w-full mt-6 bg-slate-800 h-2 rounded-full overflow-hidden">
+        <div id="timer-progress" class="bg-gradient-to-r from-indigo-500 to-purple-600 h-full w-0 transition-all duration-300"></div>
+      </div>
+
+      <!-- Controles do Timer -->
+      <div class="flex items-center gap-3 mt-6 relative z-10">
+        <button id="btn-start" onclick="toggleTimer()" class="px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold shadow-lg shadow-indigo-600/30 active:scale-95 transition-all flex items-center gap-2">
+          <span id="btn-start-icon">▶</span>
+          <span id="btn-start-label">Iniciar</span>
+        </button>
+        <button onclick="resetTimer()" title="Reiniciar" class="p-2.5 rounded-2xl border border-slate-700 bg-slate-800/80 hover:bg-slate-750 text-slate-300 hover:text-white text-sm transition-all active:scale-95">
+          🔄
+        </button>
+      </div>
+    </div>
+
+    <!-- Sons Ambientes (Web Audio API) -->
+    <div class="p-4 rounded-2xl bg-slate-950/40 border border-slate-800/80 space-y-3">
+      <div class="flex items-center justify-between text-xs">
+        <span class="font-semibold text-slate-300 flex items-center gap-1.5">
+          🎧 Sons de Concentração
+        </span>
+        <span class="text-[10px] text-slate-500">Sintetizado nativo</span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2">
+        <button id="sound-rain" onclick="toggleSound('rain')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-indigo-500 text-xs font-medium flex flex-col items-center gap-1.5 transition-all text-slate-300">
+          <span class="text-lg">🌧️</span>
+          <span>Chuva</span>
+        </button>
+        <button id="sound-waves" onclick="toggleSound('waves')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-indigo-500 text-xs font-medium flex flex-col items-center gap-1.5 transition-all text-slate-300">
+          <span class="text-lg">🌊</span>
+          <span>Ondas</span>
+        </button>
+        <button id="sound-white" onclick="toggleSound('white')" class="p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:border-indigo-500 text-xs font-medium flex flex-col items-center gap-1.5 transition-all text-slate-300">
+          <span class="text-lg">📻</span>
+          <span>Estática</span>
+        </button>
+      </div>
+
+      <!-- Volume -->
+      <div class="flex items-center justify-between gap-3 pt-2 text-xs text-slate-400">
+        <span>Volume</span>
+        <input id="volume-slider" type="range" min="0" max="1" step="0.05" value="0.3" oninput="updateVolume(this.value)" class="w-2/3 accent-indigo-500 h-1.5 rounded-lg cursor-pointer bg-slate-800">
+      </div>
+    </div>
+
+    <!-- Pílula de Inspiração -->
+    <div class="p-3.5 rounded-xl border border-slate-800/60 bg-slate-950/20 text-xs text-center text-slate-400">
+      <p id="quote-text">"O segredo para avançar é simplesmente começar."</p>
+    </div>
+
+  </div>
+
+  <script>
+    const MODES = {
+      focus: { label: 'Foco Total', seconds: 25 * 60 },
+      short: { label: 'Pausa Curta', seconds: 5 * 60 },
+      long: { label: 'Pausa Longa', seconds: 15 * 60 }
+    };
+    let currentMode = 'focus';
+    let timeLeft = MODES.focus.seconds;
+    let totalTime = MODES.focus.seconds;
+    let isRunning = false;
+    let timerInterval = null;
+    let completedSessions = 0;
+
+    const quotes = [
+      "\"O segredo para avançar é simplesmente começar.\" — Mark Twain",
+      "\"Foque no processo, não apenas no resultado.\"",
+      "\"25 minutos de atenção plena valem mais que 2 horas de distração.\"",
+      "\"Respire fundo. Uma tarefa de cada vez.\"",
+      "\"Pequenos passos diários constroem grandes conquistas.\""
+    ];
+
+    function updateDisplay() {
+      const mins = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const secs = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer-display').textContent = `${mins}:${secs}`;
+      const progressPercent = ((totalTime - timeLeft) / totalTime) * 100;
+      document.getElementById('timer-progress').style.width = `${progressPercent}%`;
+    }
+
+    function setMode(mode) {
+      if (isRunning) toggleTimer();
+      currentMode = mode;
+      totalTime = MODES[mode].seconds;
+      timeLeft = totalTime;
+      ['focus', 'short', 'long'].forEach(m => {
+        const btn = document.getElementById(`btn-mode-${m}`);
+        if (m === mode) {
+          btn.className = "py-2 rounded-xl bg-indigo-600 text-white transition-all shadow-md shadow-indigo-600/30";
+        } else {
+          btn.className = "py-2 rounded-xl text-slate-400 hover:text-slate-200 transition-all";
+        }
+      });
+      document.getElementById('timer-status').textContent = MODES[mode].label;
+      updateDisplay();
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        document.getElementById('btn-start-icon').textContent = '▶';
+        document.getElementById('btn-start-label').textContent = 'Continuar';
+        document.getElementById('timer-status').textContent = 'Pausado';
+        document.getElementById('glow-bg').classList.remove('pulsing');
+      } else {
+        initAudioContext();
+        isRunning = true;
+        document.getElementById('btn-start-icon').textContent = '⏸';
+        document.getElementById('btn-start-label').textContent = 'Pausar';
+        document.getElementById('timer-status').textContent = MODES[currentMode].label;
+        document.getElementById('glow-bg').classList.add('pulsing');
+
+        timerInterval = setInterval(() => {
+          if (timeLeft > 0) {
+            timeLeft--;
+            updateDisplay();
+          } else {
+            completeTimer();
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      if (isRunning) toggleTimer();
+      timeLeft = totalTime;
+      document.getElementById('btn-start-label').textContent = 'Iniciar';
+      document.getElementById('timer-status').textContent = 'Pronto para começar';
+      updateDisplay();
+    }
+
+    function completeTimer() {
+      clearInterval(timerInterval);
+      isRunning = false;
+      document.getElementById('btn-start-icon').textContent = '▶';
+      document.getElementById('btn-start-label').textContent = 'Iniciar';
+      document.getElementById('glow-bg').classList.remove('pulsing');
+      playChime();
+
+      if (currentMode === 'focus') {
+        completedSessions++;
+        document.getElementById('session-count').textContent = `${completedSessions} ${completedSessions === 1 ? 'sessão' : 'sessões'}`;
+        document.getElementById('timer-status').textContent = 'Parabéns! Hora de relaxar.';
+        setMode('short');
+      } else {
+        document.getElementById('timer-status').textContent = 'Pausa concluída! Pronto para focar?';
+        setMode('focus');
+      }
+      const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+      document.getElementById('quote-text').textContent = randomQuote;
+    }
+
+    let audioCtx = null;
+    let masterGain = null;
+    let activeSoundNode = null;
+    let currentSoundType = null;
+    let soundVolume = 0.3;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = soundVolume;
+        masterGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function updateVolume(val) {
+      soundVolume = parseFloat(val);
+      if (masterGain) {
+        masterGain.gain.setValueAtTime(soundVolume, audioCtx.currentTime);
+      }
+    }
+
+    function playChime() {
+      initAudioContext();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.8);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 1.8);
+    }
+
+    function stopCurrentSound() {
+      if (activeSoundNode) {
+        try {
+          if (activeSoundNode.stop) activeSoundNode.stop();
+          if (activeSoundNode.disconnect) activeSoundNode.disconnect();
+        } catch (e) {}
+        activeSoundNode = null;
+      }
+      if (currentSoundType) {
+        const btn = document.getElementById(`sound-${currentSoundType}`);
+        if (btn) {
+          btn.classList.remove('bg-indigo-600', 'text-white', 'border-transparent');
+          btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-300');
+        }
+      }
+      currentSoundType = null;
+    }
+
+    function toggleSound(type) {
+      initAudioContext();
+      if (currentSoundType === type) {
+        stopCurrentSound();
+        return;
+      }
+      stopCurrentSound();
+      currentSoundType = type;
+      
+      const btn = document.getElementById(`sound-${type}`);
+      if (btn) {
+        btn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-300');
+        btn.classList.add('bg-indigo-600', 'text-white', 'border-transparent');
+      }
+
+      const bufferSize = audioCtx.sampleRate * 2;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      if (type === 'white') {
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * 0.15;
+        }
+      } else if (type === 'rain') {
+        let lastOut = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          data[i] = (lastOut + (0.02 * white)) / 1.02;
+          lastOut = data[i];
+          data[i] *= 2.5;
+        }
+      } else if (type === 'waves') {
+        for (let i = 0; i < bufferSize; i++) {
+          const t = i / audioCtx.sampleRate;
+          const slowLfo = (Math.sin(2 * Math.PI * 0.25 * t) + 1) / 2;
+          data[i] = (Math.random() * 2 - 1) * slowLfo * 0.25;
+        }
+      }
+
+      const noiseSource = audioCtx.createBufferSource();
+      noiseSource.buffer = buffer;
+      noiseSource.loop = true;
+
+      const filter = audioCtx.createBiquadFilter();
+      if (type === 'rain') {
+        filter.type = 'lowpass';
+        filter.frequency.value = 1200;
+      } else if (type === 'waves') {
+        filter.type = 'bandpass';
+        filter.frequency.value = 600;
+        filter.Q.value = 1.0;
+      } else {
+        filter.type = 'lowpass';
+        filter.frequency.value = 3000;
+      }
+
+      noiseSource.connect(filter);
+      filter.connect(masterGain);
+      noiseSource.start();
+      activeSoundNode = noiseSource;
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
